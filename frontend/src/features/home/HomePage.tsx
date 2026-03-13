@@ -1,4 +1,4 @@
-import { useEffect, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 
 import "../../App.css";
 
@@ -7,8 +7,41 @@ interface HomePageProps {
 }
 
 export default function HomePage({ onNavigate }: HomePageProps): JSX.Element {
+    const [countdown, setCountdown] = useState<{ days: string; hours: string; mins: string; secs: string }>({
+        days: "00",
+        hours: "00",
+        mins: "00",
+        secs: "00",
+    });
+
     useEffect(() => {
+        const kickoffUtc = new Date("2026-06-11T19:00:00Z").getTime();
+
+        const updateCountdown = (): void => {
+            const now = Date.now();
+            const distance = Math.max(0, kickoffUtc - now);
+
+            const totalMinutes = Math.floor(distance / (1000 * 60));
+            const days = Math.floor(totalMinutes / (60 * 24));
+            const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+            const mins = totalMinutes % 60;
+            const secs = Math.floor((distance % (1000 * 60)) / 1000);
+
+            setCountdown({
+                days: String(days).padStart(2, "0"),
+                hours: String(hours).padStart(2, "0"),
+                mins: String(mins).padStart(2, "0"),
+                secs: String(secs).padStart(2, "0"),
+            });
+        };
+
+        updateCountdown();
+        const intervalId = window.setInterval(updateCountdown, 1000);
+
         console.log("WC 2026 Countdown Active");
+        return () => {
+            window.clearInterval(intervalId);
+        };
     }, []);
 
     return (
@@ -56,7 +89,7 @@ export default function HomePage({ onNavigate }: HomePageProps): JSX.Element {
                         <img
                             alt="MetLife Stadium"
                             className="w-full h-full object-cover"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_cVeN752V84hVeqxmQbGBBBxYurXF0Sa56T70_wOktrzzC86QmbOBgVS6TEsXGLKPYY892Y_4EiiV7_xvAzf0D1ysl1GMjGdHpsp7ZQcCMD1FynDYkfvfdw1zMbPb1YqxUbtMaCBn6LP-_yq67E2veJdIwoFC8hknHlVrsFWZLdz2y4gawFA2YwAApXXttDCv2Qiuy3hLxdC5filUkHXhSwuHWKcdAKwfj37yroAR8BjZd1Ge3st79pAlX1PqjWt95kaB2l39TXxx"
+                            src="https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1920"
                         />
                         <div className="absolute inset-0 hero-gradient-overlay"></div>
                     </div>
@@ -73,16 +106,20 @@ export default function HomePage({ onNavigate }: HomePageProps): JSX.Element {
 
                         <div className="mt-12 flex gap-8 md:gap-12" id="countdown-timer">
                             <div className="text-center md:text-left">
-                                <div className="text-4xl md:text-6xl font-black">428</div>
+                                <div className="text-4xl md:text-6xl font-black">{countdown.days}</div>
                                 <div className="text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase mt-1">Days</div>
                             </div>
                             <div className="text-center md:text-left border-l border-white/10 pl-8 md:pl-12">
-                                <div className="text-4xl md:text-6xl font-black">14</div>
+                                <div className="text-4xl md:text-6xl font-black">{countdown.hours}</div>
                                 <div className="text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase mt-1">Hours</div>
                             </div>
                             <div className="text-center md:text-left border-l border-white/10 pl-8 md:pl-12">
-                                <div className="text-4xl md:text-6xl font-black">32</div>
+                                <div className="text-4xl md:text-6xl font-black">{countdown.mins}</div>
                                 <div className="text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase mt-1">Mins</div>
+                            </div>
+                            <div className="text-center md:text-left border-l border-white/10 pl-8 md:pl-12">
+                                <div className="text-4xl md:text-6xl font-black">{countdown.secs}</div>
+                                <div className="text-[10px] md:text-xs font-bold text-gray-400 tracking-widest uppercase mt-1">Secs</div>
                             </div>
                         </div>
                     </div>
@@ -109,7 +146,7 @@ export default function HomePage({ onNavigate }: HomePageProps): JSX.Element {
                                 <img
                                     alt="Simulation Graphic"
                                     className="absolute w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDh86aiSYodzSY8xEkq0PWPD12J40NjeamqDAbpdtuRC2FF5itNgPge5wsFNL62P_Mxzy2XHErWz5ElbMQotGeS2GmeeGvNtEpRCmGBu9p16uGnb-aIbePBmfhbVIgdXkmQifzyZA0ik3z03qhKiFsLmdx506xaaC9h5RPPPAkjT9IoH9iF2gTuVkaa7-p4_UFQ-9zVE4wn-fkzi_6U6e2aiMCCuTcptArVUJNWMuYFLz5wqrW447-YPSefFzNLWJN1gXTCZRgzqLYJ"
+                                    src="https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=1600"
                                 />
                                 <div className="relative z-10 w-32 h-32 rounded-full border-2 border-brand-gold/30 flex items-center justify-center bg-brand-gold/5">
                                     <svg className="h-12 w-12 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -155,7 +192,7 @@ export default function HomePage({ onNavigate }: HomePageProps): JSX.Element {
                                 <img
                                     alt="Predictor Graphic"
                                     className="absolute w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_XgBorzj-HNKcsr1Hk_YYjmZyiBqVoVoQA-A1RFpKa8BfHBq19xUm73zBeABa3afVuQgZORUv7o3xa1eXxv08sjnDmQBLZ7TsGjGorbVC7dsuGHPVy_AsEr3tTKjVj2vtmZFzUXcjVcWJNb9rxKHWviPN523b2jNKfal7g48iqPySDBE4wKuQiMpiuJ2fgl_PPlAwFjChiF-YnxsjrzjF3F0lVtmeB0CMyT1LzR3vc7iBiQKU0n5-wfxzCVH89E5yKeUmB0Wha0uc"
+                                    src="https://images.pexels.com/photos/399187/pexels-photo-399187.jpeg?auto=compress&cs=tinysrgb&w=1600"
                                 />
                                 <div className="relative z-10 w-48 h-32 bg-brand-gray/80 border border-white/10 rounded-lg transform -rotate-12 flex flex-col p-4 shadow-2xl">
                                     <div className="w-full h-2 bg-brand-gold/30 rounded mb-2"></div>
