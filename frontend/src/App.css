@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap");
+
+body {
+  background: #0a0a0a;
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  min-height: max(884px, 100dvh);
+}
+
+/* Fallbacks in case Tailwind custom config is not applied */
+.bg-brand-black {
+  background-color: #0a0a0a !important;
+}
+
+.text-brand-black {
+  color: #0a0a0a !important;
+}
+
+.bg-brand-gold {
+  background-color: #d4af37 !important;
+}
+
+.text-brand-gold {
+  color: #d4af37 !important;
+}
+
+.bg-brand-gray {
+  background-color: #1a1a1a !important;
+}
+
+.bg-brand-lightGray {
+  background-color: #262626 !important;
+}
+
+.bg-brand-neon {
+  background-color: #00f0ff !important;
+}
+
+.text-brand-neon {
+  color: #00f0ff !important;
+}
+
+.glass-panel {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.hero-title {
+  font-style: italic;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.text-gold {
+  color: #D4AF37;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(212, 175, 55, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.glossy-button {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 1) 0%, rgba(184, 134, 11, 1) 100%);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.max-w-dashboard {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.hero-gradient-overlay {
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.4) 0%, rgba(10, 10, 10, 0.95) 100%);
+}
+
+.stadium-overlay {
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.7) 0%, rgba(10, 10, 10, 1) 100%);
+}
+
+.neon-line {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.4), rgba(0, 242, 255, 0.6));
+  box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+}
+
+.bracket-column {
+  min-width: 280px;
+  width: 280px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tournament Predictor - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;family=Rajdhani:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#D4AF37", // Classic Gold
+                        "background-light": "#F3F4F6",
+                        "background-dark": "#0B0C0E",
+                        "card-dark": "#16181D",
+                        "accent": "#FFFFFF"
+                    },
+                    fontFamily: {
+                        display: ["Rajdhani", "sans-serif"],
+                        sans: ["Outfit", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "12px",
+                        'xl': "20px"
+                    },
+                    backgroundImage: {
+                        'carbon-pattern': "url('https://www.transparenttextures.com/patterns/carbon-fibre.png')",
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.5); }
+        }
+        .glow-effect {
+            animation: glow 3s infinite;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ticker-scroll {
+            display: flex;
+            animation: ticker 30s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-sans text-gray-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden">
+<div class="fixed inset-0 opacity-20 pointer-events-none dark:bg-carbon-pattern"></div>
+<div class="fixed top-0 left-1/2 -translate-x-1/2 w-full h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
+<main class="relative z-10 flex-1 flex flex-col items-center px-6 pt-12 pb-24">
+<header class="w-full flex justify-between items-center mb-8">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-black font-bold">trophy</span>
+</div>
+<h1 class="text-xl font-display font-bold tracking-tight">KICKOFF<span class="text-primary">ULTIMATE</span></h1>
+</div>
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">person</span>
+</button>
+</header>
+<div class="relative w-full aspect-square max-w-[320px] flex items-center justify-center mb-6">
+<div class="absolute inset-0 rounded-full blur-3xl"></div>
+<img alt="World Cup Gold Trophy" class="h-full w-auto object-contain z-20 drop-shadow-[0_20px_50px_rgba(212,175,55,0.4)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTH-hRsQ9B5-WZAXuMm7HVijuPUJvQmrnsLjVPj2aTcOsbhFnJ6G91q_NkdyvHLLdWwmBXaWuuVIpu5CKaOa84OaeBOld5Sl7Tnv73rqhwI5rQcn-pvwqHRNAIxV5wuTzVPc-Lr79suW93YF-id_llDjeQ4HW6OF9G86P3ikW5NGMVnCZQ0XSb7NVT4kLve_JzKqYZQn2WSkKJ23RkhhNSJflw6X5DDuYUFVwwjFjSiYBtVb8PWEa6Pa608yZKPSZIwj2QMD3TpoqY"/>
+<div class="absolute top-10 right-0 glass-card px-3 py-1 rounded-full text-[10px] font-bold text-primary border border-primary/30 z-30">
+                LIVE UPDATES
+            </div>
+</div>
+<div class="text-center mb-10">
+<p class="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 font-semibold mb-2">Countdown to Kickoff</p>
+<div class="flex items-center gap-3 justify-center">
+<div class="flex flex-col">
+<span class="text-4xl font-display font-bold">12</span>
+<span class="text-[10px] uppercase text-gray-500">Days</span>
+</div>
+<span class="text-3xl text-primary font-display">:</span>
+<div class="flex flex-col">
+<span class="text-4xl font-display font-bold">08</span>
+<span class="text-[10px] uppercase text-gray-500">Hrs</span>
+</div>
+<span class="text-3xl text-primary font-display">:</span>
+<div class="flex flex-col">
+<span class="text-4xl font-display font-bold">42</span>
+<span class="text-[10px] uppercase text-gray-500">Mins</span>
+</div>
+</div>
+</div>
+<div class="w-full space-y-4">
+<button class="w-full relative group">
+<div class="absolute inset-0 bg-primary rounded-xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+<div class="relative flex items-center justify-between p-6 bg-primary rounded-xl overflow-hidden glow-effect">
+<div class="absolute right-0 top-0 bottom-0 w-32 opacity-20 pointer-events-none">
+<svg class="h-full w-full fill-white" viewbox="0 0 100 100">
+<path d="M0,100 L100,0 L100,100 Z"></path>
+</svg>
+</div>
+<div class="text-left">
+<h2 class="text-2xl font-display font-bold text-black leading-tight">START<br/>SIMULATION</h2>
+<p class="text-black/70 text-sm font-semibold mt-1">AI-Powered Outcomes</p>
+</div>
+<div class="bg-black/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-black text-3xl">play_circle</span>
+</div>
+</div>
+</button>
+<button class="w-full relative group">
+<div class="relative flex items-center justify-between p-6 bg-card-dark border border-white/10 rounded-xl overflow-hidden hover:border-primary/50 transition-colors">
+<div class="text-left">
+<h2 class="text-2xl font-display font-bold text-white leading-tight">BRACKET<br/>PREDICTOR</h2>
+<p class="text-primary text-sm font-semibold mt-1">Global Leaderboard</p>
+</div>
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">account_tree</span>
+</div>
+</div>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4 w-full mt-4">
+<button class="glass-card p-4 flex flex-col items-center gap-2 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-primary">groups</span>
+<span class="text-xs font-semibold uppercase tracking-wider">My Teams</span>
+</button>
+<button class="glass-card p-4 flex flex-col items-center gap-2 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-primary">emoji_events</span>
+<span class="text-xs font-semibold uppercase tracking-wider">Rewards</span>
+</button>
+</div>
+</main>
+<footer class="fixed bottom-0 left-0 right-0 z-50">
+<div class="bg-black border-t border-white/10 py-3 overflow-hidden whitespace-nowrap">
+<div class="ticker-scroll">
+<div class="flex items-center gap-8 px-4">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+<span class="text-[10px] font-bold uppercase text-red-500">BREAKING NEWS:</span>
+<span class="text-[11px] font-medium text-white/90">BRAZIL ANNOUNCE SQUAD FOR THE FINALS...</span>
+</span>
+<span class="flex items-center gap-2">
+<span class="text-[10px] font-bold uppercase text-primary">MARKET:</span>
+<span class="text-[11px] font-medium text-white/90">FRANCE ODZ FAVORITES AT 3:1...</span>
+</span>
+<span class="flex items-center gap-2">
+<span class="text-[10px] font-bold uppercase text-gray-400">UPDATE:</span>
+<span class="text-[11px] font-medium text-white/90">NEW LEGENDARY CARDS DROPPING AT 6PM...</span>
+</span>
+</div>
+<div class="flex items-center gap-8 px-4">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+<span class="text-[10px] font-bold uppercase text-red-500">BREAKING NEWS:</span>
+<span class="text-[11px] font-medium text-white/90">BRAZIL ANNOUNCE SQUAD FOR THE FINALS...</span>
+</span>
+<span class="flex items-center gap-2">
+<span class="text-[10px] font-bold uppercase text-primary">MARKET:</span>
+<span class="text-[11px] font-medium text-white/90">FRANCE ODZ FAVORITES AT 3:1...</span>
+</span>
+<span class="flex items-center gap-2">
+<span class="text-[10px] font-bold uppercase text-gray-400">UPDATE:</span>
+<span class="text-[11px] font-medium text-white/90">NEW LEGENDARY CARDS DROPPING AT 6PM...</span>
+</span>
+</div>
+</div>
+</div>
+<nav class="bg-card-dark/95 backdrop-blur-md border-t border-white/5 pb-8 pt-2 px-8 flex justify-between items-center">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-bold uppercase">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-[10px] font-bold uppercase">Stats</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">storefront</span>
+<span class="text-[10px] font-bold uppercase">Market</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-gray-500">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold uppercase">More</span>
+</button>
+</nav>
+</footer>
+<div class="fixed bottom-32 left-0 w-32 h-32 blur-3xl rounded-full pointer-events-none bg-[#D4AF37]/10"></div>
+<div class="fixed top-1/2 right-0 w-48 h-48 blur-3xl rounded-full pointer-events-none bg-[#D4AF37]/5"></div>
+</body></html>

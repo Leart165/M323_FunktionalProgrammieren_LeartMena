@@ -1,0 +1,228 @@
+import { type JSX, useEffect, useState } from "react";
+
+import "../../App.css";
+import { loadSimulationGroups, type GroupItem } from "./simulationDataSource";
+
+interface SimulationPageProps {
+    onNavigate: (to: string) => void;
+}
+
+interface ThirdPlacedTeamRow {
+    rank: number;
+    team: string;
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goalDelta: string;
+    goalDifference: number;
+    points: number;
+    next: number;
+}
+
+const defaultBestThirdPlacedRows: ThirdPlacedTeamRow[] = [
+    { rank: 1, team: "Austria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 2, team: "Germany", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 3, team: "Ghana", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 4, team: "Iran", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 5, team: "Morocco", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 6, team: "Senegal", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 7, team: "South Korea", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 8, team: "Spain", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 9, team: "Switzerland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 10, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 11, team: "USA", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 12, team: "Uzbekistan", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+];
+
+export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX.Element {
+    const [groups, setGroups] = useState<GroupItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let active = true;
+
+        const load = async (): Promise<void> => {
+            try {
+                const data = await loadSimulationGroups();
+                if (active) {
+                    setGroups(data);
+                    setError(null);
+                }
+            } catch {
+                if (active) {
+                    setError("Groups konnten nicht geladen werden.");
+                    setGroups([]);
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void load();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    return (
+        <div className="bg-brand-black text-white font-sans selection:bg-brand-gold selection:text-brand-black min-h-screen">
+            <div className="fixed inset-0 z-0">
+                <img
+                    alt="Stadium Background"
+                    className="w-full h-full object-cover opacity-30"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ9WBf_Ve_nN4lfVdHPbEzdnAFBo8dUvp6G0Llyj-PFYUfsskMh_kGFdP_7Zvf_7NDF6jzeDPUQnRfvBWyjg7--fmkWObFai6kh4PvYKUlpkS7GIRyMUKzveRZ6oLHU3goJH8pMDjg2uHYZiWO14OQNT98wfWN-4Tj1YS8AhMdOOHZyPBkOVwx1EfuMTHvFDLeZcz2YDsD6W9ZmWaisj6tf6YKTG5wo7aeGu0Zz20s6wyiK1aMzZ6z-tBsoIooVBEjJhCyWYry9F51"
+                />
+                <div className="absolute inset-0 stadium-overlay"></div>
+            </div>
+
+            <header className="fixed top-0 left-0 right-0 z-50 bg-brand-black/80 backdrop-blur-md border-b border-white/5 px-4 h-16 flex items-center justify-between">
+                <button className="flex items-center gap-2" onClick={() => onNavigate("/")} type="button">
+                    <span className="material-symbols-outlined text-brand-gold">arrow_back_ios</span>
+                    <div className="font-black text-lg tracking-tighter uppercase italic">
+                        SIM <span className="text-brand-gold">DASHBOARD</span>
+                    </div>
+                </button>
+                <div className="bg-brand-gold/10 px-3 py-1 rounded-full border border-brand-gold/20">
+                    <span className="text-[10px] font-black text-brand-gold tracking-widest uppercase italic">Groups A-L</span>
+                </div>
+            </header>
+
+            <main className="relative z-10 pt-20 pb-32 px-4">
+                <section className="mb-6">
+                    <h1 className="text-2xl font-black italic uppercase tracking-tight">
+                        Simulation <span className="text-brand-gold">Center</span>
+                    </h1>
+                    <p className="text-xs text-gray-400 mt-1">Run tournament scenarios and open each group for detailed fixtures and standings.</p>
+                </section>
+
+                <section className="mb-8 space-y-3">
+                    <button className="w-full glossy-button py-4 rounded-xl flex items-center justify-center gap-3 text-brand-black font-black uppercase italic tracking-wider" type="button">
+                        <span className="material-symbols-outlined font-bold">play_arrow</span>
+                        Simulate All Groups
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            className="bg-brand-lightGray/50 border border-white/10 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs"
+                            onClick={() => onNavigate("/simulation/knockout")}
+                            type="button"
+                        >
+                            <span className="material-symbols-outlined text-sm">lock</span>
+                            Sim Knockout
+                        </button>
+                        <button className="bg-white/5 border border-white/20 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs" type="button">
+                            <span className="material-symbols-outlined text-sm">settings_suggest</span>
+                            Full Auto-Sim
+                        </button>
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-2 gap-4">
+                    {loading && <div className="glass-card rounded-2xl p-5 text-sm text-gray-400">Lade Gruppen...</div>}
+                    {!loading && error && <div className="glass-card rounded-2xl p-5 text-sm text-red-300">{error}</div>}
+                    {!loading && !error && groups.length === 0 && <div className="glass-card rounded-2xl p-5 text-sm text-gray-400">Keine Gruppen vorhanden.</div>}
+
+                    {groups.map((group) => (
+                        <div
+                            key={group.id}
+                            className="glass-card rounded-2xl p-5 relative overflow-hidden cursor-pointer"
+                            onClick={() => onNavigate(`/simulation/group/${group.id}`)}
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    onNavigate(`/simulation/group/${group.id}`);
+                                }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                        >
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <span className="text-6xl font-black italic">{group.id}</span>
+                            </div>
+                            <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+                                <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-gold">Group {group.id}</h3>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1">{group.venue}</span>
+                            </div>
+                            <div className="space-y-2">
+                                {group.teams.map((team) => (
+                                    <div key={team.name} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className={`w-6 h-4 rounded-sm border border-white/10 ${team.flagClassName}`}></div>
+                                            <span className="text-xs font-bold uppercase truncate">{team.name}</span>
+                                            {team.tag && <span className={`text-[9px] ${team.tagClassName ?? "text-gray-500 font-bold"}`}>{team.tag}</span>}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-[9px] text-gray-500 uppercase">GD <span className="text-gray-300 font-bold">0</span></span>
+                                            <span className="text-[9px] text-gray-500 uppercase">PTS <span className="text-white font-black">0</span></span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </section>
+
+                <section className="glass-card rounded-2xl p-4 mt-6">
+                    <h2 className="text-xs font-black tracking-[0.2em] uppercase text-brand-gold mb-3">Best 3rd Placed Teams</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[760px] text-left border-collapse">
+                            <thead>
+                                <tr className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-white/10 bg-white/5">
+                                    <th className="py-2 pl-3">#</th>
+                                    <th className="py-2">Team</th>
+                                    <th className="py-2 text-center">PL</th>
+                                    <th className="py-2 text-center">W</th>
+                                    <th className="py-2 text-center">D</th>
+                                    <th className="py-2 text-center">L</th>
+                                    <th className="py-2 text-center">+/-</th>
+                                    <th className="py-2 text-center">GD</th>
+                                    <th className="py-2 text-center">PTS</th>
+                                    <th className="py-2 pr-3 text-center">Next</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-xs">
+                                {defaultBestThirdPlacedRows.map((row) => (
+                                    <tr key={row.rank} className="border-b border-white/10 last:border-b-0">
+                                        <td className="py-2 pl-3 font-black text-brand-gold">{row.rank}</td>
+                                        <td className="py-2 font-semibold">{row.team}</td>
+                                        <td className="py-2 text-center">{row.played}</td>
+                                        <td className="py-2 text-center">{row.wins}</td>
+                                        <td className="py-2 text-center">{row.draws}</td>
+                                        <td className="py-2 text-center">{row.losses}</td>
+                                        <td className="py-2 text-center text-gray-400">{row.goalDelta}</td>
+                                        <td className="py-2 text-center">{row.goalDifference}</td>
+                                        <td className="py-2 text-center font-black">{row.points}</td>
+                                        <td className="py-2 pr-3 text-center">{row.next}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+
+            <nav className="fixed bottom-0 left-0 right-0 bg-brand-black/95 backdrop-blur-xl border-t border-white/10 px-8 pt-4 pb-8 flex justify-between items-center z-50">
+                <div className="flex flex-col items-center gap-1 text-brand-gold">
+                    <span className="material-symbols-outlined">dashboard</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Groups</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 text-gray-500">
+                    <span className="material-symbols-outlined">stadium</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Venues</span>
+                </div>
+                <button className="flex flex-col items-center gap-1 text-gray-500" onClick={() => onNavigate("/simulation/knockout")} type="button">
+                    <span className="material-symbols-outlined">leaderboard</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Bracket</span>
+                </button>
+                <div className="flex flex-col items-center gap-1 text-gray-500">
+                    <span className="material-symbols-outlined">person</span>
+                    <span className="text-[9px] font-black uppercase tracking-tighter">Profile</span>
+                </div>
+            </nav>
+            <div className="fixed bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/20 rounded-full z-50"></div>
+        </div>
+    );
+}

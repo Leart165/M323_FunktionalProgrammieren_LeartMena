@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <FrontendRoot>../../frontend</FrontendRoot>
+    <NpmBootstrap>if [ -s "/Users/leartmena/.nvm/nvm.sh" ]; then . "/Users/leartmena/.nvm/nvm.sh"; fi</NpmBootstrap>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.24" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <Target Name="BuildFrontend" BeforeTargets="Build">
+    <Exec WorkingDirectory="$(FrontendRoot)" Command="/bin/zsh -c '$(NpmBootstrap); npm install'" />
+    <Exec WorkingDirectory="$(FrontendRoot)" Command="/bin/zsh -c '$(NpmBootstrap); npm run build'" />
+  </Target>
+
+  <Target Name="CopyFrontendToWwwroot" AfterTargets="BuildFrontend">
+    <RemoveDir Directories="$(MSBuildProjectDirectory)/wwwroot" />
+    <MakeDir Directories="$(MSBuildProjectDirectory)/wwwroot" />
+    <ItemGroup>
+      <FrontendDistFiles Include="$(FrontendRoot)/dist/**" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(FrontendDistFiles)"
+      DestinationFiles="@(FrontendDistFiles->'$(MSBuildProjectDirectory)/wwwroot/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+</Project>
