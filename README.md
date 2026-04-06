@@ -24,7 +24,7 @@ Das Projekt soll nicht nur funktionieren, sondern zentrale Konzepte der funktion
 - finale WM-2026-Gruppen `A-L`
 - Gruppenspiele mit Datum und Stadion
 - Knockout-Bracket von `Round of 32` bis `Final Stage`
-- APIs für Teams, Gruppen, Stadien, Matches und Teamstärken
+- Eigene Backend-Endpunkte für Teams, Gruppen, Stadien, Matches und Teamstärken
 - Berechnung von Gruppentabellen, Punkten, Toren und Tordifferenz
 - Berechnung der acht besten Drittplatzierten
 - automatische Qualifikation ins Knockout-Bracket
