@@ -88,34 +88,38 @@ Prediction:
 ### Backend
 
 - `TournamentDataService`
-  - liefert feste Seed-Daten für Teams, Gruppen, Stadien, Gruppenspiele, Knockout-Templates und Ratings
-  - enthält keine Berechnungslogik
+  - enthält unsere festen WM-Daten
+  - dort stehen Teams, Gruppen, Spiele, Stadien, Knockout-Slots und Ratings
+  - dieser Teil liefert Daten, rechnet aber nichts aus
 
 - `TournamentCalculations`
-  - funktionaler Kern der Anwendung
-  - berechnet Gruppentabellen, Best-Third-Ranking, Knockout-Bracket und Simulationsergebnisse
-  - arbeitet nur mit Eingabeparametern und Rückgabewerten
+  - ist der Berechnungsteil der Anwendung
+  - dort werden Tabellen, Punkte, Best-Third-Ranking, Knockout-Bracket und Simulationen berechnet
+  - diese Funktionen bekommen Daten hinein und geben neue Ergebnisse zurück
 
 - `TournamentStateService`
-  - kapselt mutierbaren In-Memory-State
-  - trennt Prediction- und Simulation-State
-  - ist die Systemgrenze zwischen reiner Fachlogik und veränderlichem Zustand
+  - speichert den aktuellen Zustand im Speicher
+  - trennt Simulation und Prediction
+  - ruft die Berechnungen aus `TournamentCalculations` auf und hält die aktuellen Resultate
 
-- `Api/*`
-  - Minimal-API-Endpunkte
-  - übernehmen HTTP, Requests und Responses
-  - enthalten keine eigentliche Tabellen- oder Bracket-Logik
+- `Api`-Ordner
+  - dort liegen die Dateien für die Backend-Endpunkte:
+    - `SimulationApi.cs`
+    - `PredictionApi.cs`
+    - `TournamentApi.cs`
+  - diese Dateien nehmen Anfragen vom Frontend entgegen und geben Antworten zurück
+  - sie berechnen selbst keine Tabellen und bauen auch nicht selbst das Bracket auf
 
 ### Frontend
 
 - `features/simulation/*`
-  - Gruppenansicht, Gruppendetails und Knockout-Simulation
+  - enthält die Seiten für Simulation, Gruppendetails und Knockout
 
 - `features/prediction/*`
-  - Gruppentipps, Best-Third-Ansicht und Predictor-Bracket
+  - enthält die Seiten für Gruppentipps und das Predictor-Bracket
 
 - `components/*`
-  - wiederverwendbare UI-Bausteine wie Flaggen
+  - enthält wiederverwendbare Teile wie Flaggen
 
 ## Funktionale Designentscheidungen
 
