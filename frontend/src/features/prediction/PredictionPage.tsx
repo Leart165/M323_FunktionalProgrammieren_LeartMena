@@ -1,7 +1,8 @@
 import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
-import { loadPredictionGroups, type PredictionGroupListItem } from "./predictionDataSource";
+import CountryFlag from "../../components/CountryFlag";
+import { loadPredictionGroupDetails, loadPredictionGroups, type PredictionGroupListItem } from "./predictionDataSource";
 
 interface PredictionPageProps {
     onNavigate: (to: string) => void;
@@ -21,24 +22,26 @@ interface ThirdPlacedTeamRow {
 }
 
 const defaultBestThirdPlacedRows: ThirdPlacedTeamRow[] = [
-    { rank: 1, team: "Austria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 2, team: "Germany", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 3, team: "Ghana", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 4, team: "Iran", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 5, team: "Morocco", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 6, team: "Senegal", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 7, team: "South Korea", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 8, team: "Spain", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 9, team: "Switzerland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 10, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 11, team: "USA", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 1, team: "Algeria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 2, team: "Australia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 3, team: "Egypt", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 4, team: "Ivory Coast", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 5, team: "Norway", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 6, team: "Panama", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 7, team: "Qatar", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 8, team: "Saudi Arabia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 9, team: "Scotland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 10, team: "South Africa", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 11, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
     { rank: 12, team: "Uzbekistan", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
 ];
 
 export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX.Element {
     const [groups, setGroups] = useState<PredictionGroupListItem[]>([]);
+    const [bestThirdRows, setBestThirdRows] = useState<ThirdPlacedTeamRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [knockoutReady, setKnockoutReady] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -49,10 +52,18 @@ export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX
                     setGroups(data);
                     setError(null);
                 }
+
+                const details = await Promise.all(data.map((group) => loadPredictionGroupDetails(group.groupId)));
+                if (active) {
+                    setKnockoutReady(details.every((group) =>
+                        group !== null && group.fixtures.every((fixture) =>
+                            fixture.predictedHomeGoals !== null && fixture.predictedAwayGoals !== null)));
+                }
             } catch {
                 if (active) {
                     setError("Prediction groups konnten nicht geladen werden.");
                     setGroups([]);
+                    setKnockoutReady(false);
                 }
             } finally {
                 if (active) {
@@ -62,6 +73,36 @@ export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX
         };
 
         void load();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+
+        const loadBestThird = async (): Promise<void> => {
+            try {
+                const response = await fetch("/api/prediction/best-third");
+                if (!response.ok) {
+                    if (active) {
+                        setBestThirdRows(defaultBestThirdPlacedRows);
+                    }
+                    return;
+                }
+
+                const rows = (await response.json()) as ThirdPlacedTeamRow[];
+                if (active) {
+                    setBestThirdRows(rows);
+                }
+            } catch {
+                if (active) {
+                    setBestThirdRows(defaultBestThirdPlacedRows);
+                }
+            }
+        };
+
+        void loadBestThird();
         return () => {
             active = false;
         };
@@ -98,6 +139,18 @@ export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX
                     <p className="text-xs text-gray-400 mt-1">Open a group and predict every fixture with your own scoreline.</p>
                 </section>
 
+                <section className="mb-6">
+                    <button
+                        className="w-full bg-white/10 border border-white/10 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-black uppercase italic text-xs tracking-wider disabled:opacity-50"
+                        disabled={!knockoutReady}
+                        onClick={() => onNavigate("/prediction/knockout")}
+                        type="button"
+                    >
+                        <span className="material-symbols-outlined text-sm">leaderboard</span>
+                        {knockoutReady ? "Open Predictor Bracket" : "Complete All Groups First"}
+                    </button>
+                </section>
+
                 <section className="grid grid-cols-2 gap-4">
                     {loading && <div className="glass-card rounded-2xl p-5 text-sm text-gray-400">Lade Prediction-Gruppen...</div>}
                     {!loading && error && <div className="glass-card rounded-2xl p-5 text-sm text-red-300">{error}</div>}
@@ -120,21 +173,20 @@ export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX
                             <div className="absolute top-0 right-0 p-4 opacity-10">
                                 <span className="text-6xl font-black italic">{group.groupId}</span>
                             </div>
-                            <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+                            <div className="mb-4 border-b border-white/10 pb-2">
                                 <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-gold">Group {group.groupId}</h3>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1">{group.venue}</span>
                             </div>
                             <div className="space-y-2">
                                 {group.teams.map((team) => (
                                     <div key={team.name} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <div className={`w-6 h-4 rounded-sm border border-white/10 ${team.flagClassName}`}></div>
+                                            <CountryFlag className="h-4 w-6" countryName={team.name} />
                                             <span className="text-xs font-bold uppercase truncate">{team.name}</span>
                                             {team.tag && <span className={`text-[9px] ${team.tagClassName ?? "text-gray-500 font-bold"}`}>{team.tag}</span>}
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            <span className="text-[9px] text-gray-500 uppercase">GD <span className="text-gray-300 font-bold">0</span></span>
-                                            <span className="text-[9px] text-gray-500 uppercase">PTS <span className="text-white font-black">0</span></span>
+                                            <span className="text-[9px] text-gray-500 uppercase">GD <span className="text-gray-300 font-bold">{team.gd}</span></span>
+                                            <span className="text-[9px] text-gray-500 uppercase">PTS <span className="text-white font-black">{team.pts}</span></span>
                                         </div>
                                     </div>
                                 ))}
@@ -162,7 +214,7 @@ export default function PredictionPage({ onNavigate }: PredictionPageProps): JSX
                                 </tr>
                             </thead>
                             <tbody className="text-xs">
-                                {defaultBestThirdPlacedRows.map((row) => (
+                                {bestThirdRows.map((row) => (
                                     <tr key={row.rank} className="border-b border-white/10 last:border-b-0">
                                         <td className="py-2 pl-3 font-black text-brand-gold">{row.rank}</td>
                                         <td className="py-2 font-semibold">{row.team}</td>

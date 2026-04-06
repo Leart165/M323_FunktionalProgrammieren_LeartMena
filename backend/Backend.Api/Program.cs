@@ -1,7 +1,12 @@
+using Backend.Api.Api;
+using Backend.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<TournamentDataService>();
+builder.Services.AddSingleton<TournamentStateService>();
 
 var app = builder.Build();
 
@@ -36,6 +41,10 @@ app.MapGet("/api/home-content", () =>
 })
 .WithName("GetHomeContent")
 .WithOpenApi();
+
+app.MapSimulationApi();
+app.MapPredictionApi();
+app.MapTournamentApi();
 
 app.MapFallbackToFile("index.html");
 

@@ -1,7 +1,14 @@
 import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
-import { loadSimulationGroups, type GroupItem } from "./simulationDataSource";
+import CountryFlag from "../../components/CountryFlag";
+import {
+    loadSimulationGroupDetails,
+    loadSimulationGroups,
+    resetSimulation,
+    simulateAllGroups,
+    type GroupItem,
+} from "./simulationDataSource";
 
 interface SimulationPageProps {
     onNavigate: (to: string) => void;
@@ -21,24 +28,34 @@ interface ThirdPlacedTeamRow {
 }
 
 const defaultBestThirdPlacedRows: ThirdPlacedTeamRow[] = [
-    { rank: 1, team: "Austria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 2, team: "Germany", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 3, team: "Ghana", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 4, team: "Iran", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 5, team: "Morocco", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 6, team: "Senegal", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 7, team: "South Korea", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 8, team: "Spain", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 9, team: "Switzerland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 10, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 11, team: "USA", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 1, team: "Algeria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 2, team: "Australia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 3, team: "Egypt", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 4, team: "Ivory Coast", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 5, team: "Norway", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 6, team: "Panama", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 7, team: "Qatar", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 8, team: "Saudi Arabia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 9, team: "Scotland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 10, team: "South Africa", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
+    { rank: 11, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
     { rank: 12, team: "Uzbekistan", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
 ];
 
 export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX.Element {
     const [groups, setGroups] = useState<GroupItem[]>([]);
+    const [bestThirdRows, setBestThirdRows] = useState<ThirdPlacedTeamRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [knockoutReady, setKnockoutReady] = useState(false);
+    const [simulatingAll, setSimulatingAll] = useState(false);
+    const [resetting, setResetting] = useState(false);
+
+    const loadKnockoutReady = async (nextGroups: GroupItem[]): Promise<boolean> => {
+        const details = await Promise.all(nextGroups.map((group) => loadSimulationGroupDetails(group.id)));
+        return details.every((group) =>
+            group !== null && group.fixtures.every((fixture) => fixture.homeScore !== null && fixture.awayScore !== null));
+    };
 
     useEffect(() => {
         let active = true;
@@ -50,10 +67,16 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                     setGroups(data);
                     setError(null);
                 }
+
+                const ready = await loadKnockoutReady(data);
+                if (active) {
+                    setKnockoutReady(ready);
+                }
             } catch {
                 if (active) {
                     setError("Groups konnten nicht geladen werden.");
                     setGroups([]);
+                    setKnockoutReady(false);
                 }
             } finally {
                 if (active) {
@@ -63,6 +86,36 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
         };
 
         void load();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+
+        const loadBestThird = async (): Promise<void> => {
+            try {
+                const response = await fetch("/api/simulation/best-third");
+                if (!response.ok) {
+                    if (active) {
+                        setBestThirdRows(defaultBestThirdPlacedRows);
+                    }
+                    return;
+                }
+
+                const rows = (await response.json()) as ThirdPlacedTeamRow[];
+                if (active) {
+                    setBestThirdRows(rows);
+                }
+            } catch {
+                if (active) {
+                    setBestThirdRows(defaultBestThirdPlacedRows);
+                }
+            }
+        };
+
+        void loadBestThird();
         return () => {
             active = false;
         };
@@ -100,22 +153,73 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                 </section>
 
                 <section className="mb-8 space-y-3">
-                    <button className="w-full glossy-button py-4 rounded-xl flex items-center justify-center gap-3 text-brand-black font-black uppercase italic tracking-wider" type="button">
+                    <button
+                        className="w-full glossy-button py-4 rounded-xl flex items-center justify-center gap-3 text-brand-black font-black uppercase italic tracking-wider disabled:opacity-60"
+                        disabled={simulatingAll}
+                        onClick={async () => {
+                            setSimulatingAll(true);
+                            try {
+                                const nextGroups = await simulateAllGroups();
+                                setGroups(nextGroups);
+                                setKnockoutReady(await loadKnockoutReady(nextGroups));
+
+                                const response = await fetch("/api/simulation/best-third");
+                                if (response.ok) {
+                                    const rows = (await response.json()) as ThirdPlacedTeamRow[];
+                                    setBestThirdRows(rows);
+                                }
+                            } catch {
+                                setError("Simulation konnte nicht ausgeführt werden.");
+                            } finally {
+                                setSimulatingAll(false);
+                            }
+                        }}
+                        type="button"
+                    >
                         <span className="material-symbols-outlined font-bold">play_arrow</span>
-                        Simulate All Groups
+                        {simulatingAll ? "Simulating..." : "Simulate All Groups"}
                     </button>
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            className="bg-brand-lightGray/50 border border-white/10 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs"
+                            className="bg-brand-lightGray/50 border border-white/10 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs disabled:opacity-60"
+                            disabled={!knockoutReady}
                             onClick={() => onNavigate("/simulation/knockout")}
                             type="button"
                         >
                             <span className="material-symbols-outlined text-sm">lock</span>
-                            Sim Knockout
+                            {knockoutReady ? "Sim Knockout" : "Complete All Groups First"}
                         </button>
-                        <button className="bg-white/5 border border-white/20 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs" type="button">
-                            <span className="material-symbols-outlined text-sm">settings_suggest</span>
-                            Full Auto-Sim
+                        <button
+                            className="bg-white/5 border border-white/20 py-3 rounded-xl flex items-center justify-center gap-2 text-white font-bold uppercase italic text-xs disabled:opacity-60"
+                            disabled={resetting}
+                            onClick={async () => {
+                                setResetting(true);
+                                setError(null);
+                                try {
+                                    await resetSimulation();
+                                    const [nextGroups, nextBestThirdResponse] = await Promise.all([
+                                        loadSimulationGroups(),
+                                        fetch("/api/simulation/best-third"),
+                                    ]);
+
+                                    setGroups(nextGroups);
+                                    setKnockoutReady(false);
+                                    if (nextBestThirdResponse.ok) {
+                                        const rows = (await nextBestThirdResponse.json()) as ThirdPlacedTeamRow[];
+                                        setBestThirdRows(rows);
+                                    } else {
+                                        setBestThirdRows(defaultBestThirdPlacedRows);
+                                    }
+                                } catch {
+                                    setError("Simulation konnte nicht zurückgesetzt werden.");
+                                } finally {
+                                    setResetting(false);
+                                }
+                            }}
+                            type="button"
+                        >
+                            <span className="material-symbols-outlined text-sm">restart_alt</span>
+                            {resetting ? "Resetting..." : "Reset Sim"}
                         </button>
                     </div>
                 </section>
@@ -142,21 +246,20 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                             <div className="absolute top-0 right-0 p-4 opacity-10">
                                 <span className="text-6xl font-black italic">{group.id}</span>
                             </div>
-                            <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+                            <div className="mb-4 border-b border-white/10 pb-2">
                                 <h3 className="text-2xl font-black italic uppercase tracking-tighter text-brand-gold">Group {group.id}</h3>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1">{group.venue}</span>
                             </div>
                             <div className="space-y-2">
                                 {group.teams.map((team) => (
                                     <div key={team.name} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <div className={`w-6 h-4 rounded-sm border border-white/10 ${team.flagClassName}`}></div>
+                                            <CountryFlag className="h-4 w-6" countryName={team.name} />
                                             <span className="text-xs font-bold uppercase truncate">{team.name}</span>
                                             {team.tag && <span className={`text-[9px] ${team.tagClassName ?? "text-gray-500 font-bold"}`}>{team.tag}</span>}
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            <span className="text-[9px] text-gray-500 uppercase">GD <span className="text-gray-300 font-bold">0</span></span>
-                                            <span className="text-[9px] text-gray-500 uppercase">PTS <span className="text-white font-black">0</span></span>
+                                            <span className="text-[9px] text-gray-500 uppercase">GD <span className="text-gray-300 font-bold">{team.gd}</span></span>
+                                            <span className="text-[9px] text-gray-500 uppercase">PTS <span className="text-white font-black">{team.pts}</span></span>
                                         </div>
                                     </div>
                                 ))}
@@ -184,7 +287,7 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                                 </tr>
                             </thead>
                             <tbody className="text-xs">
-                                {defaultBestThirdPlacedRows.map((row) => (
+                                {bestThirdRows.map((row) => (
                                     <tr key={row.rank} className="border-b border-white/10 last:border-b-0">
                                         <td className="py-2 pl-3 font-black text-brand-gold">{row.rank}</td>
                                         <td className="py-2 font-semibold">{row.team}</td>

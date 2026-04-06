@@ -1,7 +1,8 @@
 import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
-import { loadSimulationGroupDetails, type GroupDetails } from "./simulationDataSource";
+import CountryFlag from "../../components/CountryFlag";
+import { loadSimulationGroupDetails, simulateGroup, type GroupDetails } from "./simulationDataSource";
 
 interface GroupDetailsPageProps {
     groupId: string;
@@ -12,6 +13,7 @@ export default function GroupDetailsPage({ groupId, onNavigate }: GroupDetailsPa
     const [data, setData] = useState<GroupDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [simulating, setSimulating] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -48,6 +50,25 @@ export default function GroupDetailsPage({ groupId, onNavigate }: GroupDetailsPa
 
     const groupLabel = data?.id ?? groupId.toUpperCase();
 
+    const handleSimulateGroup = async (): Promise<void> => {
+        setSimulating(true);
+        setError(null);
+
+        try {
+            const payload = await simulateGroup(groupId);
+            if (!payload) {
+                setError("Gruppe nicht gefunden.");
+                return;
+            }
+
+            setData(payload);
+        } catch {
+            setError("Gruppe konnte nicht simuliert werden.");
+        } finally {
+            setSimulating(false);
+        }
+    };
+
     return (
         <div className="bg-brand-black text-white font-sans selection:bg-brand-gold selection:text-brand-black antialiased min-h-screen">
             <header className="fixed top-0 left-0 right-0 z-50 bg-brand-black/90 backdrop-blur-lg border-b border-white/5">
@@ -76,9 +97,14 @@ export default function GroupDetailsPage({ groupId, onNavigate }: GroupDetailsPa
 
                 <div className="px-4 mt-6">
                     <div className="pb-4 pt-2">
-                        <button className="w-full bg-brand-gold text-brand-black h-14 rounded-2xl flex items-center justify-center gap-3 shadow-[0_10px_30px_-5px_rgba(212,175,55,0.4)] active:scale-95 transition-transform" type="button">
+                        <button
+                            className="w-full bg-brand-gold text-brand-black h-14 rounded-2xl flex items-center justify-center gap-3 shadow-[0_10px_30px_-5px_rgba(212,175,55,0.4)] active:scale-95 transition-transform disabled:opacity-60"
+                            disabled={simulating}
+                            onClick={() => void handleSimulateGroup()}
+                            type="button"
+                        >
                             <span className="material-symbols-outlined font-black">bolt</span>
-                            <span className="text-sm font-black uppercase tracking-widest italic">Simulate Whole Group</span>
+                            <span className="text-sm font-black uppercase tracking-widest italic">{simulating ? "Simulating..." : "Simulate Whole Group"}</span>
                         </button>
                     </div>
                     {loading && <div className="glass-card rounded-xl p-4 text-sm text-gray-300">Lade Group-Details...</div>}
@@ -113,7 +139,7 @@ export default function GroupDetailsPage({ groupId, onNavigate }: GroupDetailsPa
                                                 <tr key={`${row.pos}-${row.team.shortName}`} className={index === 0 ? "border-b border-white/5 bg-brand-gold/5" : index < data.standings.length - 1 ? "border-b border-white/5" : ""}>
                                                     <td className={`py-3 pl-3 font-black italic ${index === 0 ? "text-brand-gold" : ""}`}>{row.pos}</td>
                                                     <td className="py-3 flex items-center gap-2">
-                                                        <div className={`w-6 h-4 rounded-sm border border-white/10 ${row.team.flagClassName}`}></div>
+                                                        <CountryFlag className="h-4 w-6" countryName={row.team.name} />
                                                         <span>{row.team.shortName}</span>
                                                     </td>
                                                     <td className="py-3 text-center text-gray-400">{row.played}</td>
@@ -142,28 +168,40 @@ export default function GroupDetailsPage({ groupId, onNavigate }: GroupDetailsPa
                                 </div>
                                 <div className="space-y-3">
                                     {data.fixtures.map((fixture) => (
-                                        <div key={fixture.matchNumber} className="glass-card p-4 rounded-xl flex items-center justify-between">
+                                            <div key={fixture.fixtureId} className="glass-card p-4 rounded-xl flex items-center justify-between">
                                             <div className="flex flex-col gap-1 w-2/3">
                                                 <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                                                     {fixture.matchdayLabel} • Match {fixture.matchNumber} • {fixture.dateLabel}
                                                 </span>
+                                                <span className="text-[9px] font-bold text-brand-gold uppercase tracking-widest">
+                                                    {fixture.venue}
+                                                </span>
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex flex-col gap-1.5">
                                                         <div className="flex items-center gap-2">
-                                                            <div className={`w-4 h-3 rounded-px ${fixture.home.flagClassName}`}></div>
+                                                            <CountryFlag className="h-3 w-4 text-[10px]" countryName={fixture.home.name} />
                                                             <span className="text-sm font-extrabold italic uppercase">{fixture.home.name}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <div className={`w-4 h-3 rounded-px ${fixture.away.flagClassName}`}></div>
+                                                            <CountryFlag className="h-3 w-4 text-[10px]" countryName={fixture.away.name} />
                                                             <span className="text-sm font-extrabold italic uppercase">{fixture.away.name}</span>
                                                         </div>
                                                     </div>
                                                     <div className="text-xs font-black text-brand-gold px-2 py-1 border border-brand-gold/30 rounded italic">VS</div>
                                                 </div>
                                             </div>
-                                            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all" type="button">
-                                                Simulate
-                                            </button>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 bg-brand-lightGray rounded flex items-center justify-center text-xs font-black text-brand-gold">
+                                                        {fixture.homeScore ?? "-"}
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-brand-gold">:</span>
+                                                    <div className="w-8 h-8 bg-brand-lightGray rounded flex items-center justify-center text-xs font-black text-white">
+                                                        {fixture.awayScore ?? "-"}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{fixture.status}</span>
+                                            </div>
                                         </div>
                                     ))}
 

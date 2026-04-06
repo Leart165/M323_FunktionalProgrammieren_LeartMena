@@ -59,6 +59,10 @@ export default function NavigationPage(): React.JSX.Element {
         return <PredictionPage onNavigate={navigate} />;
     }
 
+    if (pathname === "/prediction/knockout") {
+        return <KnockoutPage apiBase="/api/prediction" backRoute="/prediction" onNavigate={navigate} title="PREDICTION BRACKET" allowSimulation={false} />;
+    }
+
     if (pathname.startsWith("/prediction/group/")) {
         const groupId = pathname.split("/").pop() ?? "";
         return <PredictionGroupPage groupId={groupId} onNavigate={navigate} />;
