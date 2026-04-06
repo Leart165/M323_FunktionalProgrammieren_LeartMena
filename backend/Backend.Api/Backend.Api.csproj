@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <FrontendRoot>../../frontend</FrontendRoot>
     <NpmBootstrap>if [ -s "/Users/leartmena/.nvm/nvm.sh" ]; then . "/Users/leartmena/.nvm/nvm.sh"; fi</NpmBootstrap>
+    <SkipFrontendBuild Condition="'$(SkipFrontendBuild)' == ''">false</SkipFrontendBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,12 +14,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
-  <Target Name="BuildFrontend" BeforeTargets="Build">
+  <Target Name="BuildFrontend" BeforeTargets="Build" Condition="'$(SkipFrontendBuild)' != 'true'">
     <Exec WorkingDirectory="$(FrontendRoot)" Command="/bin/zsh -c '$(NpmBootstrap); npm install'" />
     <Exec WorkingDirectory="$(FrontendRoot)" Command="/bin/zsh -c '$(NpmBootstrap); npm run build'" />
   </Target>
 
-  <Target Name="CopyFrontendToWwwroot" AfterTargets="BuildFrontend">
+  <Target Name="CopyFrontendToWwwroot" AfterTargets="BuildFrontend" Condition="'$(SkipFrontendBuild)' != 'true'">
     <RemoveDir Directories="$(MSBuildProjectDirectory)/wwwroot" />
     <MakeDir Directories="$(MSBuildProjectDirectory)/wwwroot" />
     <ItemGroup>
