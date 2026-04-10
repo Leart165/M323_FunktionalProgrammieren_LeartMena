@@ -1,3 +1,5 @@
+using Backend.Api.DTOs;
+
 namespace Backend.Api.Services;
 
 public sealed class TournamentStateService
@@ -256,5 +258,3 @@ public sealed class TournamentStateService
         return new MatchScore(homeGoals + 1, awayGoals);
     }
 }
-
-public sealed record PredictionScoreInput(string FixtureId, int? HomeGoals, int? AwayGoals);

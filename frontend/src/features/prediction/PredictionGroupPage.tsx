@@ -2,12 +2,8 @@ import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
 import CountryFlag from "../../components/CountryFlag";
-import {
-    clearPredictionGroupScores,
-    loadPredictionGroupDetails,
-    savePredictionGroupScores,
-    type PredictionGroupDetails,
-} from "./predictionDataSource";
+import { clearPredictionGroupScores, loadPredictionGroupDetails, savePredictionGroupScores } from "./predictionDataSource";
+import type { PredictionGroupDetails } from "./models";
 
 interface PredictionGroupPageProps {
     groupId: string;

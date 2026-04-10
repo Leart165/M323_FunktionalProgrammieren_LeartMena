@@ -1,3 +1,5 @@
+using Backend.Api.DTOs;
+
 namespace Backend.Api.Services;
 
 public static class TournamentCalculations
@@ -675,12 +677,3 @@ public static class TournamentCalculations
 
     private sealed record KnockoutLink(string FromMatchId, string ToMatchId);
 }
-
-public sealed record MatchScore(int HomeGoals, int AwayGoals);
-
-public sealed record TournamentProjection(
-    IReadOnlyList<GroupItemDto> Groups,
-    IReadOnlyDictionary<string, GroupDetailsDto> SimulationGroups,
-    IReadOnlyDictionary<string, PredictionGroupDetailsDto> PredictionGroups,
-    KnockoutBracketDto Knockout,
-    IReadOnlyList<ThirdPlacedTeamRowDto> BestThird);

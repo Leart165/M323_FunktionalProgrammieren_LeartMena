@@ -1,10 +1,10 @@
 import React from "react";
 
 import HomePage from "./features/home/HomePage";
+import KnockoutPage from "./features/knockout/KnockoutPage";
 import PredictionGroupPage from "./features/prediction/PredictionGroupPage";
 import PredictionPage from "./features/prediction/PredictionPage";
 import GroupDetailsPage from "./features/simulation/GroupDetailsPage";
-import KnockoutPage from "./features/simulation/KnockoutPage";
 import SimulationPage from "./features/simulation/SimulationPage";
 
 function normalizePath(pathname: string): string {

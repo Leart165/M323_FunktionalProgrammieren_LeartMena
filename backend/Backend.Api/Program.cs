@@ -1,4 +1,4 @@
-using Backend.Api.Api;
+using Backend.Api.Controllers;
 using Backend.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,9 +42,9 @@ app.MapGet("/api/home-content", () =>
 .WithName("GetHomeContent")
 .WithOpenApi();
 
-app.MapSimulationApi();
-app.MapPredictionApi();
-app.MapTournamentApi();
+app.MapSimulationController();
+app.MapPredictionController();
+app.MapTournamentController();
 
 app.MapFallbackToFile("index.html");
 

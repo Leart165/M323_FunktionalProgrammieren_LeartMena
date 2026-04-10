@@ -1,10 +1,10 @@
 using Backend.Api.Services;
 
-namespace Backend.Api.Api;
+namespace Backend.Api.Controllers;
 
-public static class TournamentApi
+public static class TournamentController
 {
-    public static RouteGroupBuilder MapTournamentApi(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapTournamentController(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/tournament");
 

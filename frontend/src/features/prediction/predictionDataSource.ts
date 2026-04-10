@@ -1,35 +1,8 @@
-import type { GroupTeam, StandingRow } from "../simulation/simulationDataSource";
-
-export interface PredictionGroupListItem {
-    groupId: string;
-    venue: string;
-    teams: GroupTeam[];
-}
-
-export interface PredictionFixture {
-    fixtureId: string;
-    matchNumber: number;
-    matchdayLabel: string;
-    dateLabel: string;
-    venue: string;
-    homeTeam: GroupTeam;
-    awayTeam: GroupTeam;
-    predictedHomeGoals: number | null;
-    predictedAwayGoals: number | null;
-}
-
-export interface PredictionGroupDetails {
-    groupId: string;
-    venue: string;
-    standings: StandingRow[];
-    fixtures: PredictionFixture[];
-}
-
-export interface PredictionScoreInput {
-    fixtureId: string;
-    homeGoals: number | null;
-    awayGoals: number | null;
-}
+import type {
+    PredictionGroupDetails,
+    PredictionGroupListItem,
+    PredictionScoreInput,
+} from "./models";
 
 async function parseResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {

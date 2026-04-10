@@ -2,7 +2,8 @@ import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
 import CountryFlag from "../../components/CountryFlag";
-import { loadSimulationGroupDetails, simulateGroup, type GroupDetails } from "./simulationDataSource";
+import { loadSimulationGroupDetails, simulateGroup } from "./simulationDataSource";
+import type { GroupDetails } from "./models";
 
 interface GroupDetailsPageProps {
     groupId: string;

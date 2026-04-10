@@ -7,7 +7,7 @@ Die Anwendung hat zwei Hauptmodi:
 - `Simulation`: Gruppenspiele und Knockout-Runden automatisch simulieren
 - `Prediction`: eigene Resultate für Gruppen und Knockout-Bracket eingeben
 
-Das Frontend läuft mit React/Vite, das Backend mit ASP.NET Core Minimal API.
+Das Frontend läuft mit React/Vite, das Backend mit ASP.NET Core Minimal Controller-Endpunkten.
 
 ## Projektziel
 
@@ -88,9 +88,13 @@ Prediction:
 ### Backend
 
 - `TournamentDataService`
-  - enthält unsere festen WM-Daten
-  - dort stehen Teams, Gruppen, Spiele, Stadien, Knockout-Slots und Ratings
-  - dieser Teil liefert Daten, rechnet aber nichts aus
+  - ist die Read-/Mapping-Schicht für Turnierdaten
+  - liefert Gruppen, Fixtures, Knockout-Templates, Stärken und Katalog-Endpunkte
+  - rechnet selbst keine Tabellen oder Brackets
+
+- `TournamentSeedData`
+  - enthält die festen Seed-Daten (Gruppen, Fixtures, Knockout-Templates, Ratings)
+  - ist zentral, damit harte Daten nicht in mehreren Services verteilt sind
 
 - `TournamentCalculations`
   - ist der Berechnungsteil der Anwendung
@@ -102,21 +106,24 @@ Prediction:
   - trennt Simulation und Prediction
   - ruft die Berechnungen aus `TournamentCalculations` auf und hält die aktuellen Resultate
 
-- `Api`-Ordner
+- `Controllers`-Ordner
   - dort liegen die Dateien für die Backend-Endpunkte:
-    - `SimulationApi.cs`
-    - `PredictionApi.cs`
-    - `TournamentApi.cs`
+    - `SimulationController.cs`
+    - `PredictionController.cs`
+    - `TournamentController.cs`
   - diese Dateien nehmen Anfragen vom Frontend entgegen und geben Antworten zurück
   - sie berechnen selbst keine Tabellen und bauen auch nicht selbst das Bracket auf
 
 ### Frontend
 
 - `features/simulation/*`
-  - enthält die Seiten für Simulation, Gruppendetails und Knockout
+  - enthält die Seiten für Simulation und Gruppendetails
 
 - `features/prediction/*`
-  - enthält die Seiten für Gruppentipps und das Predictor-Bracket
+  - enthält die Seiten für Gruppentipps
+
+- `features/knockout/*`
+  - enthält die gemeinsame Knockout-Bracket-Seite (Simulation + Prediction)
 
 - `components/*`
   - enthält wiederverwendbare Teile wie Flaggen
@@ -187,7 +194,7 @@ Im Frontend werden Closures bewusst eingesetzt, zum Beispiel für:
 
 Typisierung ist ein zentraler Teil des Designs:
 
-- C# `record`s für Domain-Modelle und DTOs
+- C# `record`s im Backend in `DTOs/` (einheitlicher Typbereich)
 - TypeScript-Interfaces für Gruppen, Fixtures, Tabellen und Knockout-Daten
 - keine `any`-Typen in der eigentlichen Fachlogik
 

@@ -1,10 +1,11 @@
+using Backend.Api.DTOs;
 using Backend.Api.Services;
 
-namespace Backend.Api.Api;
+namespace Backend.Api.Controllers;
 
-public static class PredictionApi
+public static class PredictionController
 {
-    public static RouteGroupBuilder MapPredictionApi(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapPredictionController(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/prediction");
 
@@ -42,5 +43,3 @@ public static class PredictionApi
         return group;
     }
 }
-
-public sealed record PredictionGroupUpdateRequest(IReadOnlyList<PredictionScoreInput> Scores);

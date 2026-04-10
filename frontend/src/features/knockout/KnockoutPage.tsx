@@ -1,17 +1,8 @@
 import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
-import {
-    clearPredictionKnockoutScores,
-    loadKnockoutBracket,
-    savePredictionKnockoutScores,
-    simulateAllKnockout,
-    simulateKnockoutRound,
-    type KnockoutBracketData,
-    type KnockoutMatch,
-    type KnockoutScoreInput,
-    type KnockoutStage,
-} from "./knockoutDataSource";
+import { clearPredictionKnockoutScores, loadKnockoutBracket, savePredictionKnockoutScores, simulateAllKnockout, simulateKnockoutRound } from "./knockoutDataSource";
+import type { KnockoutBracketData, KnockoutMatch, KnockoutScoreInput, KnockoutStage } from "./models";
 
 interface KnockoutPageProps {
     onNavigate: (to: string) => void;

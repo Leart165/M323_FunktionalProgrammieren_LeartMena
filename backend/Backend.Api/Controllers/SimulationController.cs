@@ -1,10 +1,10 @@
 using Backend.Api.Services;
 
-namespace Backend.Api.Api;
+namespace Backend.Api.Controllers;
 
-public static class SimulationApi
+public static class SimulationController
 {
-    public static RouteGroupBuilder MapSimulationApi(this IEndpointRouteBuilder app)
+    public static RouteGroupBuilder MapSimulationController(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/simulation");
 

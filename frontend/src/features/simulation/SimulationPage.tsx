@@ -2,45 +2,12 @@ import { type JSX, useEffect, useState } from "react";
 
 import "../../App.css";
 import CountryFlag from "../../components/CountryFlag";
-import {
-    loadSimulationGroupDetails,
-    loadSimulationGroups,
-    resetSimulation,
-    simulateAllGroups,
-    type GroupItem,
-} from "./simulationDataSource";
+import { loadSimulationGroupDetails, loadSimulationGroups, resetSimulation, simulateAllGroups } from "./simulationDataSource";
+import type { GroupItem, ThirdPlacedTeamRow } from "./models";
 
 interface SimulationPageProps {
     onNavigate: (to: string) => void;
 }
-
-interface ThirdPlacedTeamRow {
-    rank: number;
-    team: string;
-    played: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    goalDelta: string;
-    goalDifference: number;
-    points: number;
-    next: number;
-}
-
-const defaultBestThirdPlacedRows: ThirdPlacedTeamRow[] = [
-    { rank: 1, team: "Algeria", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 2, team: "Australia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 3, team: "Egypt", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 4, team: "Ivory Coast", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 5, team: "Norway", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 6, team: "Panama", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 7, team: "Qatar", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 8, team: "Saudi Arabia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 9, team: "Scotland", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 10, team: "South Africa", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 11, team: "Tunisia", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-    { rank: 12, team: "Uzbekistan", played: 0, wins: 0, draws: 0, losses: 0, goalDelta: "-", goalDifference: 0, points: 0, next: 0 },
-];
 
 export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX.Element {
     const [groups, setGroups] = useState<GroupItem[]>([]);
@@ -99,7 +66,7 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                 const response = await fetch("/api/simulation/best-third");
                 if (!response.ok) {
                     if (active) {
-                        setBestThirdRows(defaultBestThirdPlacedRows);
+                        setBestThirdRows([]);
                     }
                     return;
                 }
@@ -110,7 +77,7 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                 }
             } catch {
                 if (active) {
-                    setBestThirdRows(defaultBestThirdPlacedRows);
+                    setBestThirdRows([]);
                 }
             }
         };
@@ -208,7 +175,7 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                                         const rows = (await nextBestThirdResponse.json()) as ThirdPlacedTeamRow[];
                                         setBestThirdRows(rows);
                                     } else {
-                                        setBestThirdRows(defaultBestThirdPlacedRows);
+                                        setBestThirdRows([]);
                                     }
                                 } catch {
                                     setError("Simulation konnte nicht zurückgesetzt werden.");
@@ -301,6 +268,13 @@ export default function SimulationPage({ onNavigate }: SimulationPageProps): JSX
                                         <td className="py-2 pr-3 text-center">{row.next}</td>
                                     </tr>
                                 ))}
+                                {bestThirdRows.length === 0 && (
+                                    <tr>
+                                        <td className="py-3 pl-3 text-gray-400" colSpan={10}>
+                                            Keine Daten vorhanden.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
