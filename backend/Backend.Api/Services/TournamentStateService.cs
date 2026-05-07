@@ -5,7 +5,7 @@ namespace Backend.Api.Services;
 public sealed class TournamentStateService
 {
     private readonly object _sync = new();
-    private readonly TournamentDataService _data;
+    private readonly TournamentDataService _tournamentDataService;
     private Dictionary<string, MatchScore> _predictionScores = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, MatchScore> _predictionKnockoutScores = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, MatchScore> _simulationScores = new(StringComparer.OrdinalIgnoreCase);
@@ -13,14 +13,14 @@ public sealed class TournamentStateService
 
     public TournamentStateService(TournamentDataService data)
     {
-        _data = data;
+        _tournamentDataService = data;
     }
 
     public TournamentProjection GetPredictionProjection()
     {
         lock (_sync)
         {
-            return BuildProjection(_predictionScores, _predictionKnockoutScores);
+            return BuildTournamentProjection(_predictionScores, _predictionKnockoutScores);
         }
     }
 
@@ -28,13 +28,13 @@ public sealed class TournamentStateService
     {
         lock (_sync)
         {
-            return BuildProjection(_simulationScores, _simulationKnockoutScores);
+            return BuildTournamentProjection(_simulationScores, _simulationKnockoutScores);
         }
     }
 
     public PredictionGroupDetailsDto? SavePredictionGroup(string groupId, IReadOnlyList<PredictionScoreInput> scores)
     {
-        var fixtures = _data.FindGroupFixtures(groupId);
+        var fixtures = _tournamentDataService.FindGroupFixtures(groupId);
         if (fixtures.Count == 0)
         {
             return null;
@@ -49,31 +49,31 @@ public sealed class TournamentStateService
 
         lock (_sync)
         {
-            var next = new Dictionary<string, MatchScore>(_predictionScores, StringComparer.OrdinalIgnoreCase);
+            var updatedPredictionScores = new Dictionary<string, MatchScore>(_predictionScores, StringComparer.OrdinalIgnoreCase);
 
             foreach (var fixture in fixtures)
             {
-                next.Remove(fixture.FixtureId);
+                updatedPredictionScores.Remove(fixture.FixtureId);
             }
 
             foreach (var update in updates)
             {
                 if (fixtures.Any(fixture => string.Equals(fixture.FixtureId, update.Key, StringComparison.OrdinalIgnoreCase)))
                 {
-                    next[update.Key] = update.Value;
+                    updatedPredictionScores[update.Key] = update.Value;
                 }
             }
 
-            _predictionScores = next;
+            _predictionScores = updatedPredictionScores;
             _predictionKnockoutScores = new Dictionary<string, MatchScore>(StringComparer.OrdinalIgnoreCase);
-            var projection = BuildProjection(_predictionScores, _predictionKnockoutScores);
+            var projection = BuildTournamentProjection(_predictionScores, _predictionKnockoutScores);
             return projection.PredictionGroups.TryGetValue(groupId, out var details) ? details : null;
         }
     }
 
     public PredictionGroupDetailsDto? ClearPredictionGroup(string groupId)
     {
-        var fixtures = _data.FindGroupFixtures(groupId);
+        var fixtures = _tournamentDataService.FindGroupFixtures(groupId);
         if (fixtures.Count == 0)
         {
             return null;
@@ -81,32 +81,32 @@ public sealed class TournamentStateService
 
         lock (_sync)
         {
-            var next = new Dictionary<string, MatchScore>(_predictionScores, StringComparer.OrdinalIgnoreCase);
+            var predictionScoresAfterClear = new Dictionary<string, MatchScore>(_predictionScores, StringComparer.OrdinalIgnoreCase);
             foreach (var fixture in fixtures)
             {
-                next.Remove(fixture.FixtureId);
+                predictionScoresAfterClear.Remove(fixture.FixtureId);
             }
 
-            _predictionScores = next;
+            _predictionScores = predictionScoresAfterClear;
             _predictionKnockoutScores = new Dictionary<string, MatchScore>(StringComparer.OrdinalIgnoreCase);
-            var projection = BuildProjection(_predictionScores, _predictionKnockoutScores);
+            var projection = BuildTournamentProjection(_predictionScores, _predictionKnockoutScores);
             return projection.PredictionGroups.TryGetValue(groupId, out var details) ? details : null;
         }
     }
 
     public KnockoutBracketDto SavePredictionKnockout(IReadOnlyList<PredictionScoreInput> scores)
     {
-        var updates = scores
+        var validScoreUpdatesByFixtureId = scores
             .Where(score => score.HomeGoals is not null && score.AwayGoals is not null)
             .Select(score => new KeyValuePair<string, MatchScore>(
                 score.FixtureId,
-                NormalizeKnockoutScore(score.HomeGoals!.Value, score.AwayGoals!.Value)))
+                EnsureKnockoutWinnerScore(score.HomeGoals!.Value, score.AwayGoals!.Value)))
             .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase);
 
         lock (_sync)
         {
-            _predictionKnockoutScores = new Dictionary<string, MatchScore>(updates, StringComparer.OrdinalIgnoreCase);
-            return BuildProjection(_predictionScores, _predictionKnockoutScores).Knockout;
+            _predictionKnockoutScores = new Dictionary<string, MatchScore>(validScoreUpdatesByFixtureId, StringComparer.OrdinalIgnoreCase);
+            return BuildTournamentProjection(_predictionScores, _predictionKnockoutScores).Knockout;
         }
     }
 
@@ -115,63 +115,61 @@ public sealed class TournamentStateService
         lock (_sync)
         {
             _predictionKnockoutScores = new Dictionary<string, MatchScore>(StringComparer.OrdinalIgnoreCase);
-            return BuildProjection(_predictionScores, _predictionKnockoutScores).Knockout;
+            return BuildTournamentProjection(_predictionScores, _predictionKnockoutScores).Knockout;
         }
     }
 
-    public GroupDetailsDto? SimulateGroup(string groupId, int? seed = null)
+    public GroupDetailsDto? SimulateGroup(string groupId)
     {
-        var group = _data.FindGroup(groupId);
+        var group = _tournamentDataService.FindGroup(groupId);
         if (group is null)
         {
             return null;
         }
 
-        var fixtures = _data.FindGroupFixtures(groupId);
-        var strengths = _data.GetStrengths();
+        var fixtures = _tournamentDataService.FindGroupFixtures(groupId);
+        var strengths = _tournamentDataService.GetStrengths();
 
         lock (_sync)
         {
-            var next = TournamentCalculations.SimulateGroupFixtures(
-                group,
+            var updatedSimulationScores = TournamentCalculations.SimulateGroupFixtures(
                 fixtures,
                 _simulationScores,
                 strengths,
-                seed ?? Random.Shared.Next());
+                Random.Shared.Next());
 
-            _simulationScores = new Dictionary<string, MatchScore>(next, StringComparer.OrdinalIgnoreCase);
-            var projection = BuildProjection(_simulationScores, _simulationKnockoutScores);
+            _simulationScores = new Dictionary<string, MatchScore>(updatedSimulationScores, StringComparer.OrdinalIgnoreCase);
+            var projection = BuildTournamentProjection(_simulationScores, _simulationKnockoutScores);
             return projection.SimulationGroups.TryGetValue(groupId, out var details) ? details : null;
         }
     }
 
-    public TournamentProjection SimulateAllGroups(int? seed = null)
+    public TournamentProjection SimulateAllGroups()
     {
-        var strengths = _data.GetStrengths();
+        var strengths = _tournamentDataService.GetStrengths();
 
         lock (_sync)
         {
-            var baseSeed = seed ?? Random.Shared.Next();
-            var simulated = _data.GetGroupDefinitions()
+            var baseSeed = Random.Shared.Next();
+            var simulatedScores = _tournamentDataService.GetGroupDefinitions()
                 .Aggregate(
                     (IReadOnlyDictionary<string, MatchScore>)new Dictionary<string, MatchScore>(_simulationScores, StringComparer.OrdinalIgnoreCase),
-                    (current, group) => TournamentCalculations.SimulateGroupFixtures(
-                        group,
-                        _data.FindGroupFixtures(group.Id),
-                        current,
+                    (scoresSoFar, groupDefinition) => TournamentCalculations.SimulateGroupFixtures(
+                        _tournamentDataService.FindGroupFixtures(groupDefinition.Id),
+                        scoresSoFar,
                         strengths,
-                        baseSeed + group.Id[0]));
+                        baseSeed + groupDefinition.Id[0]));
 
-            _simulationScores = new Dictionary<string, MatchScore>(simulated, StringComparer.OrdinalIgnoreCase);
-            return BuildProjection(_simulationScores, _simulationKnockoutScores);
+            _simulationScores = new Dictionary<string, MatchScore>(simulatedScores, StringComparer.OrdinalIgnoreCase);
+            return BuildTournamentProjection(_simulationScores, _simulationKnockoutScores);
         }
     }
 
-    public KnockoutBracketDto SimulateNextKnockoutRound(int? seed = null)
+    public KnockoutBracketDto SimulateNextKnockoutRound()
     {
         lock (_sync)
         {
-            var projection = BuildProjection(_simulationScores, _simulationKnockoutScores);
+            var projection = BuildTournamentProjection(_simulationScores, _simulationKnockoutScores);
             var nextStage = projection.Knockout.Stages.FirstOrDefault(stage => stage.Matches.Any(match => match.Status != "simulated"));
             if (nextStage is null)
             {
@@ -182,23 +180,22 @@ public sealed class TournamentStateService
                 BuildSimulationKnockoutScores(
                     _simulationScores,
                     _simulationKnockoutScores,
-                    seed,
                     new HashSet<string>(StringComparer.OrdinalIgnoreCase) { nextStage.Title }),
                 StringComparer.OrdinalIgnoreCase);
 
-            return BuildProjection(_simulationScores, _simulationKnockoutScores).Knockout;
+            return BuildTournamentProjection(_simulationScores, _simulationKnockoutScores).Knockout;
         }
     }
 
-    public KnockoutBracketDto SimulateAllKnockout(int? seed = null)
+    public KnockoutBracketDto SimulateAllKnockout()
     {
         lock (_sync)
         {
             _simulationKnockoutScores = new Dictionary<string, MatchScore>(
-                BuildSimulationKnockoutScores(_simulationScores, _simulationKnockoutScores, seed, null),
+                BuildSimulationKnockoutScores(_simulationScores, _simulationKnockoutScores, null),
                 StringComparer.OrdinalIgnoreCase);
 
-            return BuildProjection(_simulationScores, _simulationKnockoutScores).Knockout;
+            return BuildTournamentProjection(_simulationScores, _simulationKnockoutScores).Knockout;
         }
     }
 
@@ -219,36 +216,35 @@ public sealed class TournamentStateService
         }
     }
 
-    private TournamentProjection BuildProjection(
+    private TournamentProjection BuildTournamentProjection(
         IReadOnlyDictionary<string, MatchScore> groupScores,
         IReadOnlyDictionary<string, MatchScore> knockoutScores)
     {
-        return TournamentCalculations.BuildProjection(
-            _data.GetGroupDefinitions(),
-            _data.GetGroupFixtures(),
+        return TournamentCalculations.BuildTournamentProjection(
+            _tournamentDataService.GetGroupDefinitions(),
+            _tournamentDataService.GetGroupFixtures(),
             groupScores,
-            _data.GetKnockoutTemplates(),
+            _tournamentDataService.GetKnockoutTemplates(),
             knockoutScores);
     }
 
     private IReadOnlyDictionary<string, MatchScore> BuildSimulationKnockoutScores(
         IReadOnlyDictionary<string, MatchScore> groupScores,
         IReadOnlyDictionary<string, MatchScore> existingKnockoutScores,
-        int? seed,
         IReadOnlySet<string>? stageTitles)
     {
         return TournamentCalculations.SimulateKnockoutScores(
-            _data.GetGroupDefinitions(),
-            _data.GetGroupFixtures(),
+            _tournamentDataService.GetGroupDefinitions(),
+            _tournamentDataService.GetGroupFixtures(),
             groupScores,
-            _data.GetKnockoutTemplates(),
+            _tournamentDataService.GetKnockoutTemplates(),
             existingKnockoutScores,
-            _data.GetStrengths(),
-            seed ?? Random.Shared.Next(),
+            _tournamentDataService.GetStrengths(),
+            Random.Shared.Next(),
             stageTitles);
     }
 
-    private static MatchScore NormalizeKnockoutScore(int homeGoals, int awayGoals)
+    private static MatchScore EnsureKnockoutWinnerScore(int homeGoals, int awayGoals)
     {
         if (homeGoals != awayGoals)
         {

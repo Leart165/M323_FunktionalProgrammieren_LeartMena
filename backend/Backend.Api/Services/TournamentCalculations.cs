@@ -4,23 +4,20 @@ namespace Backend.Api.Services;
 
 public static class TournamentCalculations
 {
-    public static TournamentProjection BuildProjection(
+    public static TournamentProjection BuildTournamentProjection(
         IReadOnlyList<GroupDefinition> groups,
         IReadOnlyList<FixtureDefinition> fixtures,
         IReadOnlyDictionary<string, MatchScore> scores,
         IReadOnlyList<KnockoutTemplateDefinition> knockoutTemplates,
-        IReadOnlyDictionary<string, MatchScore> knockoutScores,
-        Func<GroupTeamDefinition, GroupTeamDto>? teamMapper = null)
+        IReadOnlyDictionary<string, MatchScore> knockoutScores)
     {
-        var mapTeam = teamMapper ?? CreateTeamDto;
-
         var groupResults = groups
-            .Select(group => BuildGroupResult(group, fixtures.Where(fixture => fixture.GroupId == group.Id).ToList(), scores))
+            .Select(groupDefinition => BuildGroupResult(groupDefinition, fixtures.Where(fixture => fixture.GroupId == groupDefinition.Id).ToList(), scores))
             .ToList();
 
         var bestThirdTeams = BuildBestThirdTable(groupResults);
         var qualifiedThirdPlaceGroups = bestThirdTeams.Where(team => team.Next == 1)
-            .Select(row => row.GroupId)
+            .Select(thirdPlacedTeam => thirdPlacedTeam.GroupId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var groupSummaries = groupResults
@@ -28,21 +25,21 @@ public static class TournamentCalculations
             .ToList();
 
         var simulationGroups = groupResults.ToDictionary(
-            group => group.Group.Id,
-            group => new GroupDetailsDto(
-                group.Group.Id,
-                group.Group.Teams.Select(mapTeam).ToList(),
-                group.OrderedStats.Select((stats, index) => CreateStandingRow(group.Group, stats, index, qualifiedThirdPlaceGroups)).ToList(),
-                group.Fixtures.Select(fixture => CreateSimulationFixture(group.Group, fixture, scores)).ToList()),
+            groupResult => groupResult.Group.Id,
+            groupResult => new GroupDetailsDto(
+                groupResult.Group.Id,
+                groupResult.Group.Teams.Select(CreateTeamDto).ToList(),
+                groupResult.OrderedStats.Select((teamStats, tablePositionIndex) => BuildGroupTableRow(groupResult.Group, teamStats, tablePositionIndex, qualifiedThirdPlaceGroups)).ToList(),
+                groupResult.Fixtures.Select(fixture => CreateSimulationFixture(groupResult.Group, fixture, scores)).ToList()),
             StringComparer.OrdinalIgnoreCase);
 
         var predictionGroups = groupResults.ToDictionary(
-            group => group.Group.Id,
-            table => new PredictionGroupDetailsDto(
-                table.Group.Id,
-                table.Group.VenueSummary,
-                table.OrderedStats.Select((stats, index) => CreateStandingRow(table.Group, stats, index, qualifiedThirdPlaceGroups)).ToList(),
-                table.Fixtures.Select(fixture => CreatePredictionFixture(table.Group, fixture, scores)).ToList()),
+            groupResult => groupResult.Group.Id,
+            groupResult => new PredictionGroupDetailsDto(
+                groupResult.Group.Id,
+                groupResult.Group.VenueSummary,
+                groupResult.OrderedStats.Select((teamStats, tablePositionIndex) => BuildGroupTableRow(groupResult.Group, teamStats, tablePositionIndex, qualifiedThirdPlaceGroups)).ToList(),
+                groupResult.Fixtures.Select(fixture => CreatePredictionFixture(groupResult.Group, fixture, scores)).ToList()),
             StringComparer.OrdinalIgnoreCase);
 
         return new TournamentProjection(
@@ -50,17 +47,17 @@ public static class TournamentCalculations
             simulationGroups,
             predictionGroups,
             BuildKnockoutBracket(groupResults, bestThirdTeams, knockoutTemplates, knockoutScores),
-            bestThirdTeams.Select((row, index) => new ThirdPlacedTeamRowDto(
-                index + 1,
-                row.TeamName,
-                row.Played,
-                row.Wins,
-                row.Draws,
-                row.Losses,
-                FormatGoalDelta(row.GoalsFor, row.GoalsAgainst),
-                row.GoalDifference,
-                row.Points,
-                row.Next)).ToList());
+            bestThirdTeams.Select((thirdPlacedTeam, rankingIndex) => new ThirdPlacedTeamRowDto(
+                rankingIndex + 1,
+                thirdPlacedTeam.TeamName,
+                thirdPlacedTeam.Played,
+                thirdPlacedTeam.Wins,
+                thirdPlacedTeam.Draws,
+                thirdPlacedTeam.Losses,
+                FormatGoalDelta(thirdPlacedTeam.GoalsFor, thirdPlacedTeam.GoalsAgainst),
+                thirdPlacedTeam.GoalDifference,
+                thirdPlacedTeam.Points,
+                thirdPlacedTeam.Next)).ToList());
     }
 
     public static IReadOnlyDictionary<string, MatchScore> SimulateKnockoutScores(
@@ -70,11 +67,11 @@ public static class TournamentCalculations
         IReadOnlyList<KnockoutTemplateDefinition> knockoutTemplates,
         IReadOnlyDictionary<string, MatchScore> existingKnockoutScores,
         IReadOnlyDictionary<string, TeamStrengthDto> strengths,
-        int seed,
+        int randomSeed,
         IReadOnlySet<string>? stageTitlesToSimulate = null)
     {
         var groupResults = groups
-            .Select(group => BuildGroupResult(group, fixtures.Where(fixture => fixture.GroupId == group.Id).ToList(), groupScores))
+            .Select(groupDefinition => BuildGroupResult(groupDefinition, fixtures.Where(fixture => fixture.GroupId == groupDefinition.Id).ToList(), groupScores))
             .ToList();
 
         var bestThirdTeams = BuildBestThirdTable(groupResults);
@@ -107,7 +104,7 @@ public static class TournamentCalculations
                 continue;
             }
 
-            var result = SimulateKnockoutMatch(template.Id, homeTeam, awayTeam, strengths, seed);
+            var result = SimulateKnockoutMatch(template.Id, homeTeam, awayTeam, strengths, randomSeed);
             knockoutScores[template.Id] = result.Score;
             knockoutWinners[template.Id] = result.Winner;
             knockoutLosers[template.Id] = result.Loser;
@@ -117,46 +114,44 @@ public static class TournamentCalculations
     }
 
     public static IReadOnlyDictionary<string, MatchScore> SimulateGroupFixtures(
-        GroupDefinition group,
-        IReadOnlyList<FixtureDefinition> fixtures,
+        IReadOnlyList<FixtureDefinition> groupFixtures,
         IReadOnlyDictionary<string, MatchScore> existingScores,
         IReadOnlyDictionary<string, TeamStrengthDto> strengths,
-        int seed)
+        int randomSeed)
     {
-        return fixtures
-            .OrderBy(fixture => fixture.MatchNumber)
+        return groupFixtures
+            .OrderBy(groupFixture => groupFixture.MatchNumber)
             .Aggregate(
                 new Dictionary<string, MatchScore>(existingScores, StringComparer.OrdinalIgnoreCase),
-                (current, fixture) =>
+                (scoresSoFar, currentFixture) =>
                 {
-                    if (current.ContainsKey(fixture.FixtureId))
+                    if (scoresSoFar.ContainsKey(currentFixture.FixtureId))
                     {
-                        return current;
+                        return scoresSoFar;
                     }
 
                     var result = SimulateMatch(
-                        fixture,
-                        strengths[fixture.HomeTeam].Rating,
-                        strengths[fixture.AwayTeam].Rating,
-                        seed);
+                        currentFixture,
+                        strengths[currentFixture.HomeTeam].Rating,
+                        strengths[currentFixture.AwayTeam].Rating,
+                        randomSeed);
 
-                    return new Dictionary<string, MatchScore>(current, StringComparer.OrdinalIgnoreCase)
+                    return new Dictionary<string, MatchScore>(scoresSoFar, StringComparer.OrdinalIgnoreCase)
                     {
-                        [fixture.FixtureId] = result
+                        [currentFixture.FixtureId] = result
                     };
                 });
     }
 
-    public static MatchScore SimulateMatch(FixtureDefinition fixture, int homeStrength, int awayStrength, int seed)
+    public static MatchScore SimulateMatch(FixtureDefinition fixture, int teamAStrength, int teamBStrength, int randomSeed)
     {
-        var homeEdge = 45;
-        var diff = (homeStrength + homeEdge) - awayStrength;
-        var expectedHome = Clamp(1.15 + (diff / 260.0), 0.2, 3.5);
-        var expectedAway = Clamp(1.05 - (diff / 310.0), 0.15, 3.2);
-
-        var homeGoals = SamplePoisson(expectedHome, CombineSeed(seed, fixture.FixtureId, "home"));
-        var awayGoals = SamplePoisson(expectedAway, CombineSeed(seed, fixture.FixtureId, "away"));
-        return new MatchScore(homeGoals, awayGoals);
+        var diff = teamAStrength - teamBStrength;
+        var expectedTeamA = LimitToRange(1.15 + (diff / 260.0), 0.2, 3.5); // Erwartete Torwert für Team A berechnet
+        var expectedTeamB = LimitToRange(1.05 - (diff / 310.0), 0.15, 3.2); // Erwartete Torwert für Team B berechnet
+    
+        var teamAGoals = DrawGoalCount(expectedTeamA, BuildMatchRandomValue(randomSeed, fixture.FixtureId, "team-a"));
+        var teamBGoals = DrawGoalCount(expectedTeamB, BuildMatchRandomValue(randomSeed, fixture.FixtureId, "team-b"));
+        return new MatchScore(teamAGoals, teamBGoals);
     }
 
     private static GroupResult BuildGroupResult(
@@ -169,9 +164,11 @@ public static class TournamentCalculations
             team => TeamStats.Empty(team.Name),
             StringComparer.OrdinalIgnoreCase);
 
-        var standingsByTeam = fixtures.Aggregate(
-            (IReadOnlyDictionary<string, TeamStats>)initialStats,
-            (current, fixture) => ApplyFixtureResult(current, fixture, scores));
+        var standingsByTeam = ApplyFixturesRecursively(
+            fixtures,
+            scores,
+            initialStats,
+            0);
 
         var orderedStats = standingsByTeam.Values
             .OrderByDescending(stats => stats.Points)
@@ -229,6 +226,21 @@ public static class TournamentCalculations
         };
     }
 
+    private static IReadOnlyDictionary<string, TeamStats> ApplyFixturesRecursively(
+        IReadOnlyList<FixtureDefinition> fixtures,
+        IReadOnlyDictionary<string, MatchScore> scores,
+        IReadOnlyDictionary<string, TeamStats> currentStandings,
+        int fixtureIndex)
+    {
+        if (fixtureIndex >= fixtures.Count)
+        {
+            return currentStandings;
+        }
+
+        var updatedStandings = ApplyFixtureResult(currentStandings, fixtures[fixtureIndex], scores);
+        return ApplyFixturesRecursively(fixtures, scores, updatedStandings, fixtureIndex + 1);
+    }
+
     private static IReadOnlyList<ThirdPlaceTeam> BuildBestThirdTable(IReadOnlyList<GroupResult> groupResults)
     {
         return groupResults
@@ -253,21 +265,21 @@ public static class TournamentCalculations
             .ThenByDescending(team => team.GoalDifference)
             .ThenByDescending(team => team.GoalsFor)
             .ThenBy(team => team.TeamName, StringComparer.OrdinalIgnoreCase)
-            .Select((team, index) => team with { Next = index < 8 ? 1 : 0 })
+            .Select((team, rankingIndex) => team with { Next = rankingIndex < 8 ? 1 : 0 })
             .ToList();
     }
 
-    private static StandingRowDto CreateStandingRow(
+    private static StandingRowDto BuildGroupTableRow(
         GroupDefinition group,
         TeamStats stats,
-        int index,
+        int tablePositionIndex,
         IReadOnlySet<string> qualifiedThirdPlaceGroups)
     {
         var team = FindGroupTeam(group, stats.TeamName);
-        var next = index < 2 || (index == 2 && qualifiedThirdPlaceGroups.Contains(group.Id)) ? 1 : 0;
+        var qualifiesForNextRound = tablePositionIndex < 2 || (tablePositionIndex == 2 && qualifiedThirdPlaceGroups.Contains(group.Id)) ? 1 : 0;
 
         return new StandingRowDto(
-            index + 1,
+            tablePositionIndex + 1,
             new GroupTeamDto(team.Name, team.ShortName, team.FlagClassName, stats.GoalDifference, stats.Points, team.Tag, team.TagClassName),
             stats.Played,
             stats.Wins,
@@ -276,7 +288,7 @@ public static class TournamentCalculations
             FormatGoalDelta(stats.GoalsFor, stats.GoalsAgainst),
             stats.GoalDifference,
             stats.Points,
-            next);
+            qualifiesForNextRound);
     }
 
     private static SimulationFixtureDto CreateSimulationFixture(
@@ -471,16 +483,16 @@ public static class TournamentCalculations
 
         var assignments = new Dictionary<string, ThirdPlaceTeam>(StringComparer.OrdinalIgnoreCase);
 
-        bool Search(int index, HashSet<string> usedGroups)
+        bool Search(int slotIndex, HashSet<string> alreadyUsedGroupIds)
         {
-            if (index >= matchSlots.Count)
+            if (slotIndex >= matchSlots.Count)
             {
                 return true;
             }
 
-            var slot = matchSlots[index];
+            var slot = matchSlots[slotIndex];
             var candidates = qualifiedTeams
-                .Where(team => slot.AllowedGroups.Contains(team.GroupId) && !usedGroups.Contains(team.GroupId))
+                .Where(team => slot.AllowedGroups.Contains(team.GroupId) && !alreadyUsedGroupIds.Contains(team.GroupId))
                 .OrderByDescending(team => team.Points)
                 .ThenByDescending(team => team.GoalDifference)
                 .ThenByDescending(team => team.GoalsFor)
@@ -490,8 +502,8 @@ public static class TournamentCalculations
             foreach (var candidate in candidates)
             {
                 assignments[slot.MatchId] = candidate;
-                var nextUsedGroups = new HashSet<string>(usedGroups, StringComparer.OrdinalIgnoreCase) { candidate.GroupId };
-                if (Search(index + 1, nextUsedGroups))
+                var usedGroupIdsAfterAssignment = new HashSet<string>(alreadyUsedGroupIds, StringComparer.OrdinalIgnoreCase) { candidate.GroupId };
+                if (Search(slotIndex + 1, usedGroupIdsAfterAssignment))
                 {
                     return true;
                 }
@@ -558,13 +570,13 @@ public static class TournamentCalculations
         string homeTeam,
         string awayTeam,
         IReadOnlyDictionary<string, TeamStrengthDto> strengths,
-        int seed)
+        int randomSeed)
     {
         var score = SimulateMatch(
             new FixtureDefinition(matchId, "KO", ExtractMatchNumber(matchId), "Knockout", matchId, matchId, homeTeam, awayTeam),
             strengths[homeTeam].Rating,
             strengths[awayTeam].Rating,
-            seed);
+            randomSeed);
 
         if (score.HomeGoals != score.AwayGoals)
         {
@@ -575,8 +587,8 @@ public static class TournamentCalculations
 
         var homeStrength = strengths[homeTeam].Rating;
         var awayStrength = strengths[awayTeam].Rating;
-        var homeWinsTiebreak = NextUnitDouble(CombineSeed(seed, matchId, "tiebreak"), 1) + (homeStrength / 5000.0)
-            >= NextUnitDouble(CombineSeed(seed, matchId, "away-tiebreak"), 1) + (awayStrength / 5000.0);
+        var homeWinsTiebreak = NextDeterministicDouble(BuildMatchRandomValue(randomSeed, matchId, "tiebreak"), 1) + (homeStrength / 5000.0)
+            >= NextDeterministicDouble(BuildMatchRandomValue(randomSeed, matchId, "away-tiebreak"), 1) + (awayStrength / 5000.0);
 
         var adjustedScore = homeWinsTiebreak
             ? score with { HomeGoals = score.HomeGoals + 1 }
@@ -594,28 +606,28 @@ public static class TournamentCalculations
         return int.TryParse(matchId.TrimStart('M'), out var number) ? number : int.MaxValue;
     }
 
-    private static double Clamp(double value, double min, double max) => Math.Max(min, Math.Min(max, value));
+    private static double LimitToRange(double value, double min, double max) => Math.Max(min, Math.Min(max, value));
 
-    private static int SamplePoisson(double lambda, int seed)
+    private static int DrawGoalCount(double expectedGoals, int matchRandomValue)
     {
-        var l = Math.Exp(-lambda);
-        var k = 0;
-        var p = 1.0;
+        var stopThreshold = Math.Exp(-expectedGoals);
+        var goalCount = 0;
+        var runningProbability = 1.0;
 
-        while (p > l && k < 8)
+        while (runningProbability > stopThreshold && goalCount < 8)
         {
-            k += 1;
-            p *= NextUnitDouble(seed, k);
+            goalCount += 1;
+            runningProbability *= NextDeterministicDouble(matchRandomValue, goalCount);
         }
 
-        return Math.Max(0, k - 1);
+        return Math.Max(0, goalCount - 1);
     }
 
-    private static int CombineSeed(int seed, string fixtureId, string side)
+    private static int BuildMatchRandomValue(int randomSeed, string fixtureId, string side)
     {
         unchecked
         {
-            var hash = seed;
+            var hash = randomSeed;
             foreach (var ch in $"{fixtureId}:{side}")
             {
                 hash = (hash * 31) + ch;
@@ -625,11 +637,11 @@ public static class TournamentCalculations
         }
     }
 
-    private static double NextUnitDouble(int seed, int offset)
+    private static double NextDeterministicDouble(int randomValue, int offset)
     {
         unchecked
         {
-            var value = seed + (offset * 1103515245) + 12345;
+            var value = randomValue + (offset * 1103515245) + 12345;
             value ^= value << 13;
             value ^= value >> 17;
             value ^= value << 5;

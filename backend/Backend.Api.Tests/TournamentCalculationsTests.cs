@@ -39,7 +39,7 @@ public sealed class TournamentCalculationsTests
             ["A-6"] = new(1, 3),
         };
 
-        var projection = TournamentCalculations.BuildProjection(
+        var projection = TournamentCalculations.BuildTournamentProjection(
             groups,
             fixtures,
             scores,
@@ -59,7 +59,7 @@ public sealed class TournamentCalculationsTests
         var data = new TournamentDataService();
         var groupScores = CreateCompletedGroupScores(data);
 
-        var projection = TournamentCalculations.BuildProjection(
+        var projection = TournamentCalculations.BuildTournamentProjection(
             data.GetGroupDefinitions(),
             data.GetGroupFixtures(),
             groupScores,
@@ -77,7 +77,7 @@ public sealed class TournamentCalculationsTests
         var data = new TournamentDataService();
         var groupScores = CreateCompletedGroupScores(data);
 
-        var initialProjection = TournamentCalculations.BuildProjection(
+        var initialProjection = TournamentCalculations.BuildTournamentProjection(
             data.GetGroupDefinitions(),
             data.GetGroupFixtures(),
             groupScores,
@@ -94,7 +94,7 @@ public sealed class TournamentCalculationsTests
             ["M77"] = new(1, 0),
         };
 
-        var resolvedProjection = TournamentCalculations.BuildProjection(
+        var resolvedProjection = TournamentCalculations.BuildTournamentProjection(
             data.GetGroupDefinitions(),
             data.GetGroupFixtures(),
             groupScores,
@@ -123,7 +123,7 @@ public sealed class TournamentCalculationsTests
             data.GetKnockoutTemplates(),
             new Dictionary<string, MatchScore>(StringComparer.OrdinalIgnoreCase),
             data.GetStrengths(),
-            seed: 42,
+            randomSeed: 42,
             stageTitlesToSimulate: new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Round of 32" });
 
         Assert.Equal(16, knockoutScores.Count);
