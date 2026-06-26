@@ -244,7 +244,6 @@ public static class TournamentCalculations
     private static IReadOnlyList<ThirdPlaceTeam> BuildBestThirdTable(IReadOnlyList<GroupResult> groupResults)
     {
         return groupResults
-            .Where(group => group.OrderedStats.Count >= 3)
             .Select(group =>
             {
                 var stats = group.OrderedStats[2];
